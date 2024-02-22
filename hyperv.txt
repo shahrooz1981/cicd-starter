@@ -1,0 +1,19 @@
+New-VMSwitch -SwitchName "vSwitch1" -SwitchType Internal
+Get-NetAdapter
+New-NetIPAddress -IPAddress 192.168.99.1 -PrefixLength 24 -InterfaceIndex 55
+New-NetNat -Name vSwitch1NATnetwork -InternalIPInterfaceAddressPrefix 192.168.99.0/24
+
+sudo nano /etc/netplan/00-installer-config.yaml
+network:
+  ethernets:
+    eth0:
+      addresses:
+        - 192.168.99.10/24
+      nameservers:
+        addresses: [1.1.1.1,8.8.8.8]
+      routes:
+        - to: default
+          via: 192.168.99.1
+  version: 2
+sudo netplan apply
+

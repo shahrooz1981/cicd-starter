@@ -1,0 +1,68 @@
+- name: My first play
+  hosts: myhosts
+  tasks:
+   # - name: Ping my hosts
+     # ansible.builtin.ping:
+
+   # - name: Print message
+     # ansible.builtin.debug:
+      # msg: Hello world
+  - name: Install Java Runtime
+    become: true
+    apt:
+      name: openjdk-17-jre
+      state: present
+      update_cache: yes
+    # when: ansible_os_family == "Debian"
+  - name: Jenkins Apt Key
+    become: true
+    ansible.builtin.get_url:
+      url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+      dest: /usr/share/keyrings/jenkins-keyring.asc
+  - name: Jenkins Apt Repo
+    become: true
+    ansible.builtin.apt_repository:
+      repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+      state: present
+  - name: Install fontconfig
+    become: true
+    apt:
+      name: fontconfig
+      state: present
+      update_cache: yes
+  - name: Install Jenkins
+    become: true
+    apt:
+      name: jenkins
+      state: present
+      update_cache: yes
+  - name: Create override directory for Jenkins service
+    become: true
+    file:
+      path: /etc/systemd/system/jenkins.service.d
+      state: directory
+      mode: '0755'
+  - name: Add override.conf file
+    become: true
+    copy:
+      dest: /etc/systemd/system/jenkins.service.d/override.conf
+      content: |
+        [Service]
+        Environment="JAVA_ARGS=-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"
+      mode: '0644'
+  - name: Reload systemd daemon
+    become: true
+    systemd:
+      daemon_reload: yes
+  - name: Copy jenkins-init.groovy file
+    become: true
+    copy:
+      src: ./jenkins-init.groovy
+      dest: /var/lib/jenkins/init.groovy.d/
+      mode: '0644'
+  - name: Restart Jenkins service
+    become: true
+    systemd:
+      name: jenkins
+      state: restarted
+
